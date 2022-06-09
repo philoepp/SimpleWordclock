@@ -1,14 +1,14 @@
 #include <Arduino.h>
 #include <WiFiManager.h>
 #include <Adafruit_NeoPixel.h>
-#include <NTPClient.h>
 #include <ESP8266WiFi.h>
-#include <WiFiUdp.h>
+#include <time.h> 
 
 /* -------------------------------------------------------------------------- 
 * DEFINES
 ---------------------------------------------------------------------------- */
-
+#define MY_NTP_SERVER "de.pool.ntp.org"           
+#define MY_TZ "CET-1CEST,M3.5.0/02,M10.5.0/03"
 
 /* -------------------------------------------------------------------------- 
 Objects/variables
@@ -18,8 +18,8 @@ uint8_t rgb_colors[3] = {0};
 uint8_t hue = 0;
 uint8_t saturation = 255;
 uint8_t brightness = 128;
-WiFiUDP ntpUDP;
-NTPClient timeClient(ntpUDP, "europe.pool.ntp.org", 3600, 30000);
+time_t now;
+tm tm;
 
 /* -------------------------------------------------------------------------- 
 * STATIC FUNCTION PROTOTYPES
@@ -61,6 +61,7 @@ void vHSV2RGB(void);
 ---------------------------------------------------------------------------- */
 void setup(void)
 {
+    configTime(MY_TZ, MY_NTP_SERVER);
     WiFi.mode(WIFI_STA); // explicitly set mode, esp defaults to STA+AP
     LED.begin();
     LED.show(); // Initialize all pixels to 'off'
@@ -74,7 +75,6 @@ void setup(void)
     } 
     else {
         //if you get here you have connected to the WiFi    
-        timeClient.begin();
         Serial.println("Wifi connected!");
     }
 }
@@ -82,7 +82,8 @@ void setup(void)
 void loop(void)
 { 
     // Collect time from NTP
-    timeClient.update();
+    time(&now);                       // read the current time
+    localtime_r(&now, &tm);           // update the structure tm with the current time
 
     // Increment hue for color wheel
     hue++;
@@ -92,12 +93,7 @@ void loop(void)
 
     vHSV2RGB();
 
-    int minutes = timeClient.getMinutes();
-    int hours = timeClient.getHours();
-
-    //Serial.println(timeClient.getFormattedTime());
-
-    vSetzteLEDs(hours, minutes, rgb_colors[0], rgb_colors[1], rgb_colors[2]);
+    vSetzteLEDs(tm.tm_hour, tm.tm_min, rgb_colors[0], rgb_colors[1], rgb_colors[2]);
     delay(500);
 }
 

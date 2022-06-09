@@ -10,7 +10,6 @@
             "includePath": [
                 "c:/Users/Niedermeier/Documents/PlatformIO/Projects/SimpleWordclock/include",
                 "c:/Users/Niedermeier/Documents/PlatformIO/Projects/SimpleWordclock/src",
-                "c:/Users/Niedermeier/Documents/PlatformIO/Projects/SimpleWordclock/.pio/libdeps/nodemcuv2/NTPClient",
                 "c:/Users/Niedermeier/Documents/PlatformIO/Projects/SimpleWordclock/.pio/libdeps/nodemcuv2/Adafruit NeoPixel",
                 "c:/Users/Niedermeier/Documents/PlatformIO/Projects/SimpleWordclock/.pio/libdeps/nodemcuv2/WiFiManager",
                 "C:/Users/Niedermeier/.platformio/packages/framework-arduinoespressif8266/libraries/ESP8266WebServer/src",
@@ -22,6 +21,7 @@
                 "C:/Users/Niedermeier/.platformio/packages/toolchain-xtensa/include",
                 "C:/Users/Niedermeier/.platformio/packages/framework-arduinoespressif8266/tools/sdk/lwip2/include",
                 "C:/Users/Niedermeier/.platformio/packages/framework-arduinoespressif8266/variants/d1_mini",
+                "c:/Users/Niedermeier/Documents/PlatformIO/Projects/SimpleWordclock/.pio/libdeps/nodemcuv2/NTPClient",
                 "C:/Users/Niedermeier/.platformio/packages/framework-arduinoespressif8266/libraries/ArduinoOTA",
                 "C:/Users/Niedermeier/.platformio/packages/framework-arduinoespressif8266/libraries/DNSServer/src",
                 "C:/Users/Niedermeier/.platformio/packages/framework-arduinoespressif8266/libraries/EEPROM",
@@ -61,7 +61,6 @@
                 "path": [
                     "c:/Users/Niedermeier/Documents/PlatformIO/Projects/SimpleWordclock/include",
                     "c:/Users/Niedermeier/Documents/PlatformIO/Projects/SimpleWordclock/src",
-                    "c:/Users/Niedermeier/Documents/PlatformIO/Projects/SimpleWordclock/.pio/libdeps/nodemcuv2/NTPClient",
                     "c:/Users/Niedermeier/Documents/PlatformIO/Projects/SimpleWordclock/.pio/libdeps/nodemcuv2/Adafruit NeoPixel",
                     "c:/Users/Niedermeier/Documents/PlatformIO/Projects/SimpleWordclock/.pio/libdeps/nodemcuv2/WiFiManager",
                     "C:/Users/Niedermeier/.platformio/packages/framework-arduinoespressif8266/libraries/ESP8266WebServer/src",
@@ -73,6 +72,7 @@
                     "C:/Users/Niedermeier/.platformio/packages/toolchain-xtensa/include",
                     "C:/Users/Niedermeier/.platformio/packages/framework-arduinoespressif8266/tools/sdk/lwip2/include",
                     "C:/Users/Niedermeier/.platformio/packages/framework-arduinoespressif8266/variants/d1_mini",
+                    "c:/Users/Niedermeier/Documents/PlatformIO/Projects/SimpleWordclock/.pio/libdeps/nodemcuv2/NTPClient",
                     "C:/Users/Niedermeier/.platformio/packages/framework-arduinoespressif8266/libraries/ArduinoOTA",
                     "C:/Users/Niedermeier/.platformio/packages/framework-arduinoespressif8266/libraries/DNSServer/src",
                     "C:/Users/Niedermeier/.platformio/packages/framework-arduinoespressif8266/libraries/EEPROM",
@@ -109,7 +109,7 @@
                 ]
             },
             "defines": [
-                "PLATFORMIO=50205",
+                "PLATFORMIO=60002",
                 "ESP8266",
                 "ARDUINO_ARCH_ESP8266",
                 "ARDUINO_ESP8266_WEMOS_D1MINI",
