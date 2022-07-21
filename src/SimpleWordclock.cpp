@@ -9,6 +9,10 @@
 ---------------------------------------------------------------------------- */
 #define MY_NTP_SERVER "de.pool.ntp.org"           
 #define MY_TZ "CET-1CEST,M3.5.0/02,M10.5.0/03"
+#define MINIMAL_BRIGHTNESS 64
+#define MAXIMAL_BRIGHTNESS 200 // up to 255
+#define MINIMAL_LDR_VALUE 10
+#define MAXIMAL_LDR_VALUE 1023
 
 /* -------------------------------------------------------------------------- 
 Objects/variables
@@ -17,7 +21,8 @@ Adafruit_NeoPixel LED(114, D2, NEO_GRB + NEO_KHZ800);
 uint8_t rgb_colors[3] = {0};
 uint8_t hue = 0;
 uint8_t saturation = 255;
-uint8_t brightness = 128;
+uint8_t brightness = MAXIMAL_BRIGHTNESS;
+uint16_t advalue = MAXIMAL_LDR_VALUE;
 time_t now;
 tm tm;
 
@@ -64,8 +69,14 @@ void setup(void)
     configTime(MY_TZ, MY_NTP_SERVER);
     WiFi.mode(WIFI_STA); // explicitly set mode, esp defaults to STA+AP
     LED.begin();
+
+    // Show some dummy text, everybody knows the clock is on..
+    vEs(0, 0, 255);
+    vIst(0, 0, 255);
+    vUhr(0, 0, 255);
+
     LED.show(); // Initialize all pixels to 'off'
-    Serial.begin(115200);
+    //Serial.begin(115200);
     
     WiFiManager wm;
     bool res;
@@ -90,6 +101,17 @@ void loop(void)
 
     if(hue >= 360)
       hue = 0;
+
+    // Collect value from LDR
+    advalue = min(analogRead(A0), MAXIMAL_LDR_VALUE);
+    advalue = max((int)advalue, MINIMAL_LDR_VALUE);
+    //Serial.print("LDR AD: ");
+    //Serial.println(advalue);
+
+    // Adjust Brightness according LDR value, and add some simple floating average to smooth the process
+    brightness = ((long)brightness * 9 + map(advalue, MINIMAL_LDR_VALUE, MAXIMAL_LDR_VALUE, MINIMAL_BRIGHTNESS, MAXIMAL_BRIGHTNESS)) / 10;
+    //Serial.print("Brightness: ");
+    //Serial.println(brightness);
 
     vHSV2RGB();
 
