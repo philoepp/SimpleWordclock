@@ -10,12 +10,25 @@
 /* -------------------------------------------------------------------------- 
 * DEFINES
 ---------------------------------------------------------------------------- */
+#define MICROWORDCLOCK // Comment out for Neopixel variant
+
 #define MY_NTP_SERVER "de.pool.ntp.org"           
 #define MY_TZ "CET-1CEST,M3.5.0/02,M10.5.0/03"
-#define MINIMAL_BRIGHTNESS 64
-#define MAXIMAL_BRIGHTNESS 200 // up to 255
-#define MINIMAL_LDR_VALUE 10
-#define MAXIMAL_LDR_VALUE 1023
+
+#ifdef MICROWORDCLOCK
+#define MINIMUM_BRIGHTNESS 36
+#define MAXIMUM_BRIGHTNESS 1023 // up to 255
+#define MINIMUM_LDR_VALUE 100   // AD value at minimal brightness
+#define MAXIMUM_LDR_VALUE 800   // AD value at maximum brightness
+#else
+#define MINIMUM_BRIGHTNESS 64
+#define MAXIMUM_BRIGHTNESS 200 // up to 255
+#define MINIMUM_LDR_VALUE 10    // AD value at minimal brightness
+#define MAXIMUM_LDR_VALUE 1023  // AD value at maximum brightness
+#endif
+
+#define LED_UPDATE_INTERVAL 200 // [ms]
+#define COLOR_WHEEL_INTERVAL 1000 // [ms]
 
 // Defines for MicroWordClock
 #define ENABLE  14
@@ -31,8 +44,7 @@ LED_Micro Leds = {0};
 uint8_t rgb_colors[3] = {0};
 uint8_t hue = 0;
 uint8_t saturation = 255;
-uint8_t brightness = MAXIMAL_BRIGHTNESS;
-uint16_t advalue = MAXIMAL_LDR_VALUE;
+uint16_t brightness = MAXIMUM_BRIGHTNESS;
 time_t now;
 tm tm;
 
@@ -43,6 +55,7 @@ ESP8266HTTPUpdateServer httpUpdater;
 /* -------------------------------------------------------------------------- 
 * STATIC FUNCTION PROTOTYPES
 ---------------------------------------------------------------------------- */
+uint16_t u16CalculateBrightness(void);
 void drawPixel(uint8_t x, uint8_t y, uint8_t r, uint8_t g, uint8_t b);
 void clearPixels(void);
 void vEs(uint8_t r, uint8_t g, uint8_t b);
@@ -72,7 +85,8 @@ void vMinute1(uint8_t r, uint8_t g, uint8_t b);
 void vMinute2(uint8_t r, uint8_t g, uint8_t b);
 void vMinute3(uint8_t r, uint8_t g, uint8_t b);
 void vMinute4(uint8_t r, uint8_t g, uint8_t b);
-void vSetzteLEDs(uint8_t stunde, uint8_t minute, uint8_t r, uint8_t g, uint8_t b);
+void vSetLEDs(uint8_t stunde, uint8_t minute, uint8_t r, uint8_t g, uint8_t b);
+void vRotateColorWheel(uint16_t u16Delay);
 void vHSV2RGB(void);
 void vLedShiftOut(uint8_t *data, uint16_t brightness);
 
@@ -91,6 +105,7 @@ void setup(void)
     pinMode(CLK, OUTPUT);
     pinMode(DATA, OUTPUT);
     pinMode(ENABLE, HIGH);
+    analogWriteRange(1023);
 
     // Show some dummy text, everybody knows the clock is on..
     vEs(0, 0, 255);
@@ -153,31 +168,26 @@ void setup(void)
 
 void loop(void)
 { 
-    // Collect time from NTP
-    time(&now);                       // read the current time
-    localtime_r(&now, &tm);           // update the structure tm with the current time
-    MDNS.update();
+  static uint32_t u32LastUpdate = millis();
+  // Collect time from NTP
+  time(&now);                       // read the current time
+  localtime_r(&now, &tm);           // update the structure tm with the current time
+  MDNS.update();
+  vRotateColorWheel(COLOR_WHEEL_INTERVAL);
 
-    // Increment hue for color wheel
-    hue++;
+  // Update the LEDs in a defined time interval
+  if(millis() - u32LastUpdate > LED_UPDATE_INTERVAL)
+  {
+    u32LastUpdate = millis();
 
-    if(hue >= 360)
-      hue = 0;
-
-    // Collect value from LDR
-    advalue = min(analogRead(A0), MAXIMAL_LDR_VALUE);
-    advalue = max((int)advalue, MINIMAL_LDR_VALUE);
-    Serial.print("LDR AD: ");
-    Serial.println(advalue);
-
-    // Adjust Brightness according LDR value, and add some simple floating average to smooth the process
-    brightness = ((long)brightness * 9 + map(advalue, MINIMAL_LDR_VALUE, MAXIMAL_LDR_VALUE, MINIMAL_BRIGHTNESS, MAXIMAL_BRIGHTNESS)) / 10;
+    // Calculate desired brightness
+    brightness = u16CalculateBrightness();
     Serial.print("Brightness: ");
     Serial.println(brightness);
 
     vHSV2RGB();
+    vSetLEDs(tm.tm_hour, tm.tm_min, rgb_colors[0], rgb_colors[1], rgb_colors[2]);
 
-    vSetzteLEDs(tm.tm_hour, tm.tm_min, rgb_colors[0], rgb_colors[1], rgb_colors[2]);
     Serial.print("Current time: ");
     Serial.print(tm.tm_hour);
     Serial.print(":");
@@ -185,12 +195,33 @@ void loop(void)
     Serial.print(":");
     Serial.print(tm.tm_sec);
     Serial.println("");
-    delay(500);
+  }
 }
 
 /* -------------------------------------------------------------------------- 
 * STATIC FUNCTIONS
 ---------------------------------------------------------------------------- */
+uint16_t u16CalculateBrightness(void)
+{
+  static uint16_t u16Brightness = 0;
+  uint16_t advalue = analogRead(A0);
+
+  Serial.print("Raw LDR AD value: ");
+  Serial.println(advalue);
+
+  advalue = min(analogRead(A0), MAXIMUM_LDR_VALUE);
+  advalue = max((int)advalue, MINIMUM_LDR_VALUE);
+
+  // Collect value from LDR
+  Serial.print("Limited LDR AD value: ");
+  Serial.println(advalue);
+
+  // Adjust brightness according LDR value, and add some simple floating average to smooth the process
+  u16Brightness = (uint16_t)(((long)u16Brightness * 9 + map(advalue, MINIMUM_LDR_VALUE, MAXIMUM_LDR_VALUE, MINIMUM_BRIGHTNESS, MAXIMUM_BRIGHTNESS)) / 10);
+
+  return u16Brightness;
+}
+
 void drawPixel(uint8_t x, uint8_t y, uint8_t r, uint8_t g, uint8_t b) {
   uint8_t pixel;
   if(x & 1)
@@ -542,7 +573,7 @@ void vMinute4(uint8_t r, uint8_t g, uint8_t b)
   Leds.Led112 = 1;  
 }
 
-void vSetzteLEDs(uint8_t stunde, uint8_t minute, uint8_t r, uint8_t g, uint8_t b)
+void vSetLEDs(uint8_t stunde, uint8_t minute, uint8_t r, uint8_t g, uint8_t b)
 {
   clearPixels();
 
@@ -694,15 +725,32 @@ void vSetzteLEDs(uint8_t stunde, uint8_t minute, uint8_t r, uint8_t g, uint8_t b
   vLedShiftOut((uint8_t*)&Leds, brightness);
 }
 
+void vRotateColorWheel(uint16_t u16Delay)
+{
+  static uint32_t u32LastUpdate = millis();
+
+  if(millis() - u32LastUpdate > u16Delay)
+  {
+    // Increment hue for color wheel
+    hue++;
+  }
+
+  if(hue >= 360)
+    hue = 0;
+}
+
+
 void vHSV2RGB(void) {
   uint8_t r,g,b, i, f;
   uint8_t p, q, t;
 
   if( saturation == 0 )
-  { r = g = b = brightness;
+  { 
+    r = g = b = brightness;
   }
   else
-  { i=hue/43;
+  { 
+    i=hue/43;
     f=hue%43;
     p = (brightness * (255 - saturation))/256;
     q = (brightness * ((10710 - (saturation * f))/42))/256;
