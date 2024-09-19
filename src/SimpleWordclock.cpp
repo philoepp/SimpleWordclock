@@ -16,7 +16,7 @@
 #define MY_TZ "CET-1CEST,M3.5.0/02,M10.5.0/03"
 
 #ifdef MICROWORDCLOCK
-#define MINIMUM_BRIGHTNESS 36
+#define MINIMUM_BRIGHTNESS 100
 #define MAXIMUM_BRIGHTNESS 1023 // up to 255
 #define MINIMUM_LDR_VALUE 100   // AD value at minimal brightness
 #define MAXIMUM_LDR_VALUE 800   // AD value at maximum brightness
@@ -182,19 +182,27 @@ void loop(void)
 
     // Calculate desired brightness
     brightness = u16CalculateBrightness();
-    Serial.print("Brightness: ");
-    Serial.println(brightness);
+    // Serial.print("Brightness: ");
+    // Serial.println(brightness);
 
     vHSV2RGB();
     vSetLEDs(tm.tm_hour, tm.tm_min, rgb_colors[0], rgb_colors[1], rgb_colors[2]);
 
-    Serial.print("Current time: ");
-    Serial.print(tm.tm_hour);
-    Serial.print(":");
-    Serial.print(tm.tm_min);
-    Serial.print(":");
-    Serial.print(tm.tm_sec);
-    Serial.println("");
+    static uint8_t u8LastSecond = tm.tm_sec;
+
+    // Only output time each second
+    if(u8LastSecond != tm.tm_sec)
+    {
+      u8LastSecond = tm.tm_sec;
+
+      Serial.print("Current time: ");
+      Serial.print(tm.tm_hour);
+      Serial.print(":");
+      Serial.print(tm.tm_min);
+      Serial.print(":");
+      Serial.print(tm.tm_sec);
+      Serial.println("");
+    }
   }
 }
 
@@ -206,15 +214,14 @@ uint16_t u16CalculateBrightness(void)
   static uint16_t u16Brightness = 0;
   uint16_t advalue = analogRead(A0);
 
-  Serial.print("Raw LDR AD value: ");
-  Serial.println(advalue);
+  // Serial.print("Raw LDR AD value: ");
+  // Serial.println(advalue);
 
   advalue = min(analogRead(A0), MAXIMUM_LDR_VALUE);
   advalue = max((int)advalue, MINIMUM_LDR_VALUE);
-
-  // Collect value from LDR
-  Serial.print("Limited LDR AD value: ");
-  Serial.println(advalue);
+  
+  // Serial.print("Limited LDR AD value: ");
+  // Serial.println(advalue);
 
   // Adjust brightness according LDR value, and add some simple floating average to smooth the process
   u16Brightness = (uint16_t)(((long)u16Brightness * 9 + map(advalue, MINIMUM_LDR_VALUE, MAXIMUM_LDR_VALUE, MINIMUM_BRIGHTNESS, MAXIMUM_BRIGHTNESS)) / 10);
